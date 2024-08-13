@@ -8,8 +8,10 @@ import { useState } from "react";
 // ];
 
 export default function App() {
-
+  // поднятие state в глобальное состояние и передача от родкомпон к дочерним
   const [items, setItems] = useState([]);
+
+
 
 function handleAddItems(item) {
   setItems((items) => [...items, item]);
@@ -30,12 +32,19 @@ function handleToggleItem(id) {
 );
 }
 
+function handleClearList() {
+  const cofirmed = window.confirm(
+    "Are you want delete all items"
+  )
+  if(cofirmed) setItems([]);
+}
+
   return(
     <div className="app">
       <Logo />
       <Form onAddItems={handleAddItems}/>
-      <PackingList items={items} onDeleteItem={handleDeleteItem} onToggleItem={handleToggleItem} />
-      <Stats />
+      <PackingList items={items} onDeleteItem={handleDeleteItem} onToggleItem={handleToggleItem} onClearList={handleClearList} />
+      <Stats items={items}/>
     </div>
   )
 }
@@ -45,6 +54,7 @@ function Logo() {
     <h1>🌴 Fav Away 💼</h1>
   )
 }
+
 
 function Form({onAddItems}) {
 
@@ -90,15 +100,39 @@ function handeleSubmit(e) {
   )
 }
 
-function PackingList({items, onDeleteItem,onToggleItem}) {
+function PackingList({items, onDeleteItem,onToggleItem, onClearList}) {
+
+  const [sortBy, setSortBy] = useState("input")
+
+let sortedItems;
+if(sortBy === 'input') sortedItems =items;
+
+if(sortBy === 'description') sortedItems = items
+.slice()
+.sort((a, b) => a.description.localeCompare(b.description))
+
+if (sortBy === "packed")
+  sortedItems = items
+.slice()
+.sort((a,b) => Number(a.paced) - Number(b.paced));
+
   return (
     <div className="list">
 <ul>
-  {items.map((item) => (<Item item={item} 
+  {sortedItems.map((item) => (<Item item={item} 
   onDeleteItem={onDeleteItem}
   onToggleItem={onToggleItem}
   key={item.id}/>))}
 </ul>
+<div className="actions">
+  <select value={sortBy} onChange={(e) => setSortBy(e.target.value) }>
+    <option value='input'>Sort by input order</option>
+    <option value='description'>Sort by statys</option>
+    <option value='packed'>Sort by descriptiop</option>
+  </select>
+  <button onClick={onClearList}>Lear List</button>
+</div>
+
 </div>
   )
 }
@@ -117,10 +151,20 @@ function Item({item,onDeleteItem, onToggleItem}) {
   )
 }
 
-function Stats() {
+function Stats({items}) {
+
+    //  собираем длину массива для статистики
+    const numItems = items.length;
+    const numPacked = items.filter((item) => item.packed).length;
+    const percentage = Math.round((numPacked / numItems) * 100)
+
   return (
     <footer className="stats">
-      <em>fooret</em>
+      <em>
+        {percentage === 100 
+        ? 'You got everything ✈️' 
+        :`💼 You have ${numItems} items on your list,
+        and you already packed${numPacked} (${percentage}%)`}</em>
     </footer>
   )
 }
